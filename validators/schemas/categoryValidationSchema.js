@@ -1,4 +1,3 @@
-// categorySchema.js
 import { z } from "zod";
 import { categoryName } from "../fields/categoryFields.js";
 

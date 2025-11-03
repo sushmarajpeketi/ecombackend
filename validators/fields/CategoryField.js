@@ -1,4 +1,4 @@
-// categoryFields.js
+
 import { z } from "zod";
 
 export const categoryName = z

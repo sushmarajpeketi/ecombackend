@@ -1,4 +1,3 @@
-// productFields.js
 import { z } from "zod";
 
 export const productName = z
@@ -13,7 +12,7 @@ export const productPrice = z
   .number()
   .min(1, "Price must be at least 1");
 
-// ✅ Category = array of ObjectId strings  
+
 export const productCategory = z
   .array(
     z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid category ObjectId")
