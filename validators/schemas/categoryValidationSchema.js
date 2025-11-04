@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { categoryName } from "../fields/categoryFields.js";
+import { categoryName } from "../fields/categoryField.js";
 
 export const createCategorySchema = z.object({
   name: categoryName,

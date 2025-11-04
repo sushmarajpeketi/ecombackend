@@ -7,6 +7,8 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import userRouter from './routes/userRoutes.js'
+import productRouter from './routes/productRoutes.js'
+import categoryRouter from './routes/categoryRoutes.js'
 
 let app = express();
 
@@ -18,14 +20,17 @@ app.use(
     credentials: true,
   })
 );
+
 app.use((req, res, next) => {
+
   console.log("req body is", JSON.stringify(req.body));
   console.log("📩 Incoming request:", req.method, req.url);
   next();
 });
 
 app.use('/users',userRouter)
-
+app.use('/products',productRouter)
+app.use('/category',categoryRouter)
 
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {

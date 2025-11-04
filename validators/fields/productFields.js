@@ -15,9 +15,12 @@ export const productPrice = z
 
 export const productCategory = z
   .array(
-    z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid category ObjectId")
+    z.string()
+      .min(2, "Category name must be at least 2 characters")
+      .regex(/^[a-zA-Z\s]+$/, "Category name must contain only letters")
   )
   .min(1, "At least one category is required");
+
 
 export const productImage = z
   .string()

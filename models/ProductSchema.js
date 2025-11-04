@@ -23,11 +23,11 @@ const productSchema = new mongoose.Schema(
       min: [1, "Price must be at least 1"],
     },
 
-    category: {
+    category: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category", // <--- references Category collection
       required: true,
-    },
+    }],
     image: {
       type: String,
       default: "",
