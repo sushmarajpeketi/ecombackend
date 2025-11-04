@@ -1,4 +1,4 @@
-// middlewares/auth.js
+
 import dotenv from "dotenv";
 dotenv.config();
 import { expressjwt } from "express-jwt";

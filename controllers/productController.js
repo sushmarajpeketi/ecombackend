@@ -28,7 +28,6 @@ export const createProductController = async (req, res) => {
 };
 
 
-// ✅ GET ALL PRODUCTS
 export const getProductsController = async (req, res) => {
   try {
     const { products, total } = await getProductsService(req.query);
@@ -50,7 +49,6 @@ export const getProductsController = async (req, res) => {
 };
 
 
-// ✅ GET SINGLE PRODUCT
 export const getSingleProductController = async (req, res) => {
   try {
     const product = await getSingleProductService(req.params.id);
@@ -72,7 +70,6 @@ export const getSingleProductController = async (req, res) => {
 };
 
 
-// ✅ UPDATE PRODUCT (uses validatedData from middleware)
 export const updateProductController = async (req, res) => {
   try {
     const updates = req.validatedData; 
@@ -108,7 +105,7 @@ export const updateProductController = async (req, res) => {
 };
 
 
-// ✅ DELETE PRODUCT
+
 export const deleteProductController = async (req, res) => {
   try {
     const deleted = await deleteProductService(req.params.id);
@@ -133,7 +130,6 @@ export const deleteProductController = async (req, res) => {
 };
 
 
-// ✅ IMAGE UPLOAD
 export const uploadProductImageController = async (req, res) => {
   try {
     console.log("----------------",req.auth)
