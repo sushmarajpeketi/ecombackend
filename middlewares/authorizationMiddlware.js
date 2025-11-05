@@ -5,9 +5,11 @@
   }
 
   return (req, res, next) => {
+    console.log(req.auth)
     const userRole = req.auth?.role; 
 
     if (!userRole) {
+      
       return res.status(401).json({ message: "Unauthorized" });
     }
 

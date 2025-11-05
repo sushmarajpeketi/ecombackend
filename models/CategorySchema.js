@@ -7,6 +7,14 @@ const CategorySchema = new mongoose.Schema(
       required: [true, "Category name is required"],
       unique: true,
       trim: true,
+    },
+    description:{
+        type:String,
+        trim:true
+    },
+    status:{
+      type:Boolean,
+      default:true
     }
   },
   { timestamps: true }

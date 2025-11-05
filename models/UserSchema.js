@@ -1,4 +1,5 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Mongoose, Schema } from "mongoose";
+import { required } from "zod/mini";
 
 let UserSchema = new Schema({
   username: {
@@ -30,9 +31,9 @@ let UserSchema = new Schema({
   },
 
   role: {
-    type: String,
-    enum: ["customer", "admin", "seller", "manager", "employee"],
-    default: "customer",
+    type: Schema.Types.ObjectId,
+    ref:"Role",
+    required:true
   },
   image: {
     type: String,

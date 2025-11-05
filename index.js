@@ -6,9 +6,11 @@ import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
-import userRouter from './routes/userRoutes.js'
-import productRouter from './routes/productRoutes.js'
-import categoryRouter from './routes/categoryRoutes.js'
+import userRouter from "./routes/userRoutes.js";
+import productRouter from "./routes/productRoutes.js";
+import categoryRouter from "./routes/categoryRoutes.js";
+
+import roleRouter from "./routes/rolesRoutes.js";
 
 let app = express();
 
@@ -22,15 +24,15 @@ app.use(
 );
 
 app.use((req, res, next) => {
-
   console.log("req body is", JSON.stringify(req.body));
   console.log("📩 Incoming request:", req.method, req.url);
   next();
 });
 
-app.use('/users',userRouter)
-app.use('/products',productRouter)
-app.use('/category',categoryRouter)
+app.use("/users", userRouter);
+app.use("/products", productRouter);
+app.use("/category", categoryRouter);
+app.use("/roles", roleRouter);
 
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
@@ -38,7 +40,6 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
-
 
 app.listen("3000", () => {
   mongoose

@@ -1,3 +1,4 @@
+import { success } from "zod";
 import {
   createUser,
   loginUser,
@@ -7,6 +8,7 @@ import {
   editUser,
   deleteUser,
   userAvtarUpload,
+  getSingleUser
 } from "../services/userServices.js";
 
 const createUserController = async (req, res) => {
@@ -104,6 +106,7 @@ const getDynamicUsersController = async (req, res) => {
       queryObj
     );
 
+
     return res.status(200).json({
       success: true,
       message: "users fetch is successfull",
@@ -125,7 +128,7 @@ const getUserInfoController = async (req, res) => {
       return res.status(401).json({ error: "User not found" });
     }
 
-    res.status(200).json(user);
+    res.status(200).json(user);  
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -200,6 +203,40 @@ const uploadUserAvatarController = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+const getSingleUserController = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (req.auth.role === "customer" && req.auth.id !== id) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access this user",
+      });
+    }
+
+    const user = await getSingleUser(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "User fetched successfully",
+      user,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 export {
   createUserController,
   loginUserController,
@@ -210,4 +247,5 @@ export {
   editUserController,
   deleteUserController,
   uploadUserAvatarController,
+  getSingleUserController
 };

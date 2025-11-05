@@ -81,33 +81,40 @@ const getAllUsers = async () => {
 
 const getDynamicUsers = async (rows, skip, length, queryObj) => {
   try {
-    let count = 0;
+    let count
+
     if (length) {
-      count = await User.find(queryObj).countDocuments();
+      count = await User.countDocuments(queryObj);
     }
-    const sortedUsers = await User.find(queryObj)
-      .select("-__v")
+
+    const rawUsers = await User.find(queryObj)
+      .select("-__v") // keep _id internally so we can convert it
       .sort({ _id: 1 })
       .skip(skip)
       .limit(rows)
       .lean();
-    const users = sortedUsers.map((u) => ({
-      id: u._id.toString(),
-      ...u,
-      _id: undefined,
-    }));
+
+    const users = rawUsers.map((u) => {
+      const { _id, ...rest } = u; // ✅ remove _id before sending
+      return {
+        id: _id.toString(),        // ✅ replace _id with id
+        ...rest
+      };
+    });
+
     return { users, count };
   } catch (err) {
     throw new Error("Error fetching users: " + err.message);
   }
 };
 
+
 const getUserInfo = async (userId) => {
   try {
     const user = await User.findById(userId).select(
       "username email mobile role image"
     );
-
+    console.log("88888888888888888",user)
     if (!user) return null;
 
     const userObj = user.toObject();
@@ -146,7 +153,7 @@ const userAvtarUpload = async (id, imgUrl) => {
   try {
     const user = await User.updateOne(
       { _id: id },
-      { $set: { img: imgUrl } },
+      { $set: { image:imgUrl } },
       { new: true }
     );
 
@@ -157,6 +164,10 @@ const userAvtarUpload = async (id, imgUrl) => {
     throw new Error(e.message);
   }
 };
+ const getSingleUser = async (id) => {
+  const user = await User.findById(id).select("-password -__v");
+  return user;
+};
 export {
   createUser,
   loginUser,
@@ -166,4 +177,5 @@ export {
   editUser,
   deleteUser,
   userAvtarUpload,
+  getSingleUser
 };
