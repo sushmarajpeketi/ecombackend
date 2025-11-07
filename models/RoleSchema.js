@@ -1,9 +1,9 @@
 import mongoose, { Schema } from "mongoose";
-const MODULES = ["users", "products", "dashboard", "categories"];
-const OPERATIONS = ["read", "write", "delete"];
+export const MODULES = ["users", "products", "dashboard", "categories"];
+export const OPERATIONS = ["read", "write", "delete"];
 
 import User from "./UserSchema.js";
-import { trim } from "zod";
+
 
 let RoleSchema = new Schema(
   {
@@ -48,19 +48,6 @@ let RoleSchema = new Schema(
     },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
-
-    // permissions: {
-    //   type: Object,
-
-    //   validate: {
-    //     validator: (value) => {
-    //         const keys = [...Object.keys(value)].every((key) => MODULES.includes(key));
-    //         const values = [...Object.values(value)].every((key) =>key.every((el)=>OPERATIONS.includes(el)));
-    //         return keys && values
-    //     },
-    //     message: () => `Invalid modules found`,
-    //   },
-    // },
   },
   { timestamps: true }
 );
@@ -79,6 +66,15 @@ RoleSchema.pre(
     next();
   }
 );
+// RoleSchema.js
+RoleSchema.set("toJSON", {
+  transform: (_, ret) => {
+    if (ret.permissions instanceof Map) {
+      ret.permissions = Object.fromEntries(ret.permissions);
+    }
+    return ret;
+  }
+});
 
 let Role = mongoose.model("Role", RoleSchema);
 export default Role;

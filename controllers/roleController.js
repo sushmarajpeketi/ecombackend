@@ -2,9 +2,24 @@ import {
   createRole,
   deleteRole,
   editRole,
-  getAllRoles,
+  getRoles,
+  getModulesAndPermissions,
+   getRoleById,
 } from "../services/roleService.js";
 
+const getRoleByIdController = async (req, res) => {
+  try {
+    const role = await getRoleById(req.params.id);
+    return res.status(200).json({
+      success: true,
+      message: "Role fetched successfully",
+      data: role,
+    });
+  } catch (error) {
+    console.log("Get role error:", error.message);
+    return res.status(400).json({ error: error.message });
+  }
+};
 const createRoleController = async (req, res) => {
   try {
     const createdRole = await createRole(req.body);
@@ -21,18 +36,17 @@ const createRoleController = async (req, res) => {
   }
 };
 
-const getAllRolesController = async (req, res) => {
+ const getAllRolesController = async (req, res) => {
   try {
-    const roles = await getAllRoles();
-
+    const { roles, total } = await getRoles(req.query);
     return res.status(200).json({
       success: true,
       message: "Roles fetched successfully",
       data: roles,
+      ...(total !== undefined ? { total } : {}),
     });
   } catch (error) {
-    console.log("Create role error:", error.message);
-
+    console.log("Get roles error:", error.message);
     return res.status(400).json({ error: error.message });
   }
 };
@@ -55,11 +69,10 @@ const deleteRoleController = async (req, res) => {
 };
 const editRoleController = async (req, res) => {
   const { id } = req.params;
-  const data = req.body
+  const data = req.body;
 
   try {
-
-    const edited = await editRole(id,data);
+    const edited = await editRole(id, data);
 
     return res.status(200).json({
       success: true,
@@ -72,4 +85,26 @@ const editRoleController = async (req, res) => {
     return res.status(400).json({ error: error.message });
   }
 };
-export { createRoleController, getAllRolesController, deleteRoleController,editRoleController };
+
+const getModulesAndPermissionsController = async (req, res) => {
+  try {
+    const { modules, permissions } = await getModulesAndPermissions();
+
+    return res.status(200).json({
+      success: true,
+      message: "Modules & permissions fetched successfully",
+      data: { modules, permissions },
+    });
+  } catch (error) {
+    console.log("fetch roles and permissions error:", error.message);
+    return res.status(400).json({ error: error.message });
+  }
+};
+export {
+  createRoleController,
+  getAllRolesController,
+  deleteRoleController,
+  editRoleController,
+  getModulesAndPermissionsController,
+  getRoleByIdController,
+};

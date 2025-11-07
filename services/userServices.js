@@ -2,17 +2,18 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/UserSchema.js";
 import { success } from "zod";
-
+import Role from "../models/RoleSchema.js";
 const SALT_ROUNDS = Number(process.env.BCRYPT_ROUNDS) || 10;
 
-const createUser = async (data) => {
-  const { username, email, password, mobile, image } = data;
+const createCustomer = async (data) => {
+  const { username, email, password, mobile, image, } = data;
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new Error("EMAIL EXISTS");
   }
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+  
   const user = await User.create({
     username,
     email,
@@ -24,10 +25,43 @@ const createUser = async (data) => {
   return user;
 };
 
+const createUser = async (data) => {
+  const { username, email, password, mobile, image, role } = data;
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) throw new Error("EMAIL EXISTS");
+
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+  // Assign role: use sent role or fallback "user" role
+  let roleId;
+  if (role) {
+    const foundRole = await Role.findById(role);
+    if (!foundRole) throw new Error("Role not found");
+    roleId = foundRole._id;
+  } else {
+    const fallbackRole = await Role.findOne({ name: "user" });
+    if (!fallbackRole) throw new Error("Fallback role not found");
+    roleId = fallbackRole._id;
+  }
+
+  const user = await User.create({
+    username,
+    email,
+    password: hashedPassword,
+    mobile,
+    image,
+    role: roleId,
+  });
+
+  return user;
+};
+
+
 const loginUser = async (data) => {
   const { email, password } = data;
 
-  let user = await User.findOne({ email });
+  let user = await User.findOne({ email }).populate("role","name").lean();
 
   if (!user) {
     console.log("user not found");
@@ -40,8 +74,9 @@ const loginUser = async (data) => {
     throw new Error("Invalid password");
   }
   let username = user.username;
+  console.log({ id: user._id, username, email, ["role"]: user.role?.name})
   const token = jwt.sign(
-    { id: user._id, username, email, role: user.role },
+    { id: user._id, username, email, ["role"]: user.role?.name},
     process.env.SECRETKEY,
     {
       expiresIn: "1hr",
@@ -55,19 +90,9 @@ const loginUser = async (data) => {
 
 const getAllUsers = async () => {
   try {
-    const users = await User.aggregate([
-      {
-        $project: {
-          id: "$_id",
-          _id: 0,
-          email: 1,
-          username: 1,
-          mobile: 1,
-          image: 1,
-          role: 1,
-        },
-      },
-    ]);
+   const users = await User.find()
+  .select("username email mobile image role")
+  .populate("role", "name description");
 
     if (!users || users.length === 0) {
       throw new Error("No users found");
@@ -81,7 +106,7 @@ const getAllUsers = async () => {
 
 const getDynamicUsers = async (rows, skip, length, queryObj) => {
   try {
-    let count
+    let count;
 
     if (length) {
       count = await User.countDocuments(queryObj);
@@ -97,8 +122,8 @@ const getDynamicUsers = async (rows, skip, length, queryObj) => {
     const users = rawUsers.map((u) => {
       const { _id, ...rest } = u; // ✅ remove _id before sending
       return {
-        id: _id.toString(),        // ✅ replace _id with id
-        ...rest
+        id: _id.toString(), // ✅ replace _id with id
+        ...rest,
       };
     });
 
@@ -108,13 +133,11 @@ const getDynamicUsers = async (rows, skip, length, queryObj) => {
   }
 };
 
-
 const getUserInfo = async (userId) => {
   try {
     const user = await User.findById(userId).select(
       "username email mobile role image"
-    );
-    console.log("88888888888888888",user)
+    ).populate("role","name");
     if (!user) return null;
 
     const userObj = user.toObject();
@@ -122,6 +145,7 @@ const getUserInfo = async (userId) => {
       ...userObj,
       id: userObj._id,
       _id: undefined,
+      role:userObj.role.name
     };
   } catch (err) {
     throw new Error("Error fetching user info: " + err.message);
@@ -153,7 +177,7 @@ const userAvtarUpload = async (id, imgUrl) => {
   try {
     const user = await User.updateOne(
       { _id: id },
-      { $set: { image:imgUrl } },
+      { $set: { image: imgUrl } },
       { new: true }
     );
 
@@ -164,12 +188,14 @@ const userAvtarUpload = async (id, imgUrl) => {
     throw new Error(e.message);
   }
 };
- const getSingleUser = async (id) => {
+const getSingleUser = async (id) => {
   const user = await User.findById(id).select("-password -__v");
   return user;
 };
+
+
 export {
-  createUser,
+  createCustomer,
   loginUser,
   getAllUsers,
   getDynamicUsers,
@@ -177,5 +203,9 @@ export {
   editUser,
   deleteUser,
   userAvtarUpload,
-  getSingleUser
+  getSingleUser,
 };
+
+export {
+  createUser
+}

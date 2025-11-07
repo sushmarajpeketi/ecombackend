@@ -11,6 +11,7 @@ import productRouter from "./routes/productRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 
 import roleRouter from "./routes/rolesRoutes.js";
+import { createFallbackRole } from "./services/roleService.js";
 
 let app = express();
 
@@ -45,6 +46,7 @@ app.listen("3000", () => {
   mongoose
     .connect(`${process.env.MONGO_URL}`)
     .then(() => {
+      createFallbackRole()
       console.log("DB Connection was successful");
     })
     .catch((e) => {

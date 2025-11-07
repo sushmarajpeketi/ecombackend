@@ -1,6 +1,5 @@
-import { success } from "zod";
-import {
-  createUser,
+ import {
+  createCustomer,
   loginUser,
   getAllUsers,
   getDynamicUsers,
@@ -8,16 +7,17 @@ import {
   editUser,
   deleteUser,
   userAvtarUpload,
-  getSingleUser
+  getSingleUser,
+  createUser
 } from "../services/userServices.js";
 
-const createUserController = async (req, res) => {
+const createCustomerController = async (req, res) => {
   try {
-    const user = await createUser(req.validatedData);
+    const user = await createCustomer(req.validatedData);
 
     return res.status(201).json({
       success: true,
-      message: "User created successfully",
+      message: "SignUp successfully",
       user,
     });
   } catch (error) {
@@ -28,6 +28,38 @@ const createUserController = async (req, res) => {
     }
 
     return res.status(500).json({ error: "Something went wrong" });
+  }
+};
+const createUserController = async (req, res) => {
+  try {
+    
+    const user = await createUser(req.body);
+
+    return res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        mobile: user.mobile,
+        image: user.image,
+        role: user.role, 
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.log("Create user error:", error.message);
+
+    if (error.message === "EMAIL EXISTS") {
+      return res.status(409).json({ success: false, message: "Email already exists" });
+    }
+
+    if (error.message === "Role not found" || error.message === "Fallback role not found") {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+
+    return res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
@@ -238,7 +270,7 @@ const getSingleUserController = async (req, res) => {
 };
 
 export {
-  createUserController,
+  createCustomerController,
   loginUserController,
   logoutUserController,
   getAllUsersController,
@@ -249,3 +281,7 @@ export {
   uploadUserAvatarController,
   getSingleUserController
 };
+
+export {
+  createUserController
+}

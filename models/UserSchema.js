@@ -1,5 +1,4 @@
 import mongoose, { Mongoose, Schema } from "mongoose";
-import { required } from "zod/mini";
 
 let UserSchema = new Schema({
   username: {
@@ -35,6 +34,7 @@ let UserSchema = new Schema({
     ref:"Role",
     required:true
   },
+  
   image: {
     type: String,
     validate: {
@@ -47,9 +47,6 @@ let UserSchema = new Schema({
 let User = mongoose.model("User", UserSchema);
 
 
-User.updateOne(
-  { email: "sushmaraj808@gmail.com" },
-  { $set: { role: "admin" } }
-).catch(() => {});
+
 
 export default User;
