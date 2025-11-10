@@ -6,14 +6,15 @@ export const productName = z
 
 export const productDescription = z
   .string()
-  .min(5, "Product description must be at least 5 characters");
+  .min(4, "Product description must be at least 4 characters");
 
-export const productPrice = z.coerce.number().min(1, "Price must be at least 1");
+export const productPrice = z.coerce
+  .number()
+  .min(1, "Price must be at least 1");
 
 export const productCategory = z
   .string()
-  .min(2, "Category must be at least 2 characters")
-  .regex(/^[a-zA-Z\s]+$/, "Category must contain only letters");
+  .regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId");
 
 export const productImage = z
   .string()

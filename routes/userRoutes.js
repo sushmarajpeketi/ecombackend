@@ -8,6 +8,7 @@ import {
   loginSchema,
   updateUserSchema
 } from "../validators/schemas/userValidationSchema.js";
+
 import {
   createUserController,
   loginUserController,
@@ -15,28 +16,40 @@ import {
   getAllUsersController,
   getDynamicUsersController,
   getUserInfoController,
-  editUserController,deleteUserController,uploadUserAvatarController,getSingleUserController,
+  editUserController,
+  deleteUserController,
+  uploadUserAvatarController,
+  getSingleUserController,
   createCustomerController
 } from "../controllers/userController.js";
+
 import userAuthenticate from "../middlewares/authenticationMiddleware.js";
 import authorize from "../middlewares/authorizationMiddlware.js";
 
 router.post("/sign-up", validate(registerSchema), createCustomerController);
 router.post("/sign-in", validate(loginSchema), loginUserController);
-router.get('/logout',logoutUserController)
-router.get('/all-users',userAuthenticate,authorize(["admin"]),getAllUsersController)
-// router.get('/all-users',getAllUsersController)
-router.get('/',userAuthenticate,authorize(['customer',"admin"]),getDynamicUsersController)
-router.get('/user-info',userAuthenticate,(req,res,next)=>{
-  console.log("sfgfdgdfgdfgs",req.auth)
-  next()
+router.get("/logout", logoutUserController);
 
-},authorize(["admin"]),getUserInfoController)
-router.put('/:id',validate(updateUserSchema),userAuthenticate,authorize(["admin"]),editUserController)
-router.delete('/:id',userAuthenticate,authorize(["admin","customer"]),deleteUserController)
-router.post('/upload-avatar', userAuthenticate,authorize("admin","customer") ,upload.single('avatar'),uploadUserAvatarController );
+router.get("/all-users", userAuthenticate, authorize(["admin"]), getAllUsersController);
+
+router.get("/", userAuthenticate, authorize(["customer", "admin"]), getDynamicUsersController);
+
+router.get(
+  "/user-info",
+  userAuthenticate,
+  (req, res, next) => { next(); },
+  authorize(["admin"]),
+  getUserInfoController
+);
+
+router.put("/:id", validate(updateUserSchema), userAuthenticate, authorize(["admin"]), editUserController);
+
+router.delete("/:id", userAuthenticate, authorize(["admin", "customer"]), deleteUserController);
+
+router.post("/upload-avatar", userAuthenticate, authorize("admin", "customer"), upload.single("avatar"), uploadUserAvatarController);
+
 router.get("/:id", userAuthenticate, authorize(["admin", "customer"]), getSingleUserController);
 
-router.post('/employee/create',createUserController)
+router.post("/employee/create", createUserController);
 
 export default router;

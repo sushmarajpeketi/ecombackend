@@ -7,21 +7,24 @@ export const registerSchema = z.object({
   password,
   mobile,
   image,
-  role: role.optional()
+  role: role.optional(), // backend will resolve or fallback to "user"
 });
 
 export const loginSchema = z.object({
   email,
-  password
+  password,
 });
 
-export const updateUserSchema = z.object({
-  username: username.optional(),
-  email: email.optional(),
-  password: password.optional(),
-  mobile: mobile.optional(),
-  image,
-  role: role.optional()
-}).refine(data => Object.keys(data).length > 0, {
-  message: "At least one field must be updated",
-});
+export const updateUserSchema = z
+  .object({
+    username: username.optional(),
+    email: email.optional(),
+    password: password.optional(),
+    mobile: mobile.optional(),
+    image,
+    role: role.optional(),
+  })
+  .refine(
+    (data) => Object.values(data).some((v) => v !== undefined),
+    { message: "At least one field must be updated" }
+  );
