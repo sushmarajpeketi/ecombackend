@@ -13,7 +13,9 @@ const resolveRoleId = async (input) => {
   if (isObjectId(input)) return new mongoose.Types.ObjectId(input);
 
   if (typeof input === "string") {
-    const roleDoc = await Role.findOne({ name: { $regex: `^${input}$`, $options: "i" } }).lean();
+    const roleDoc = await Role.findOne({
+      name: { $regex: `^${input}$`, $options: "i" },
+    }).lean();
     if (!roleDoc) throw new Error(`Role "${input}" not found`);
     return roleDoc._id;
   }
@@ -31,7 +33,9 @@ const createCustomer = async (data) => {
 
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-  const fallbackRole = await Role.findOne({ name: { $regex: "^user$", $options: "i" } }).lean();
+  const fallbackRole = await Role.findOne({
+    name: { $regex: "^user$", $options: "i" },
+  }).lean();
   if (!fallbackRole) throw new Error("Fallback role not found");
 
   const user = await User.create({
@@ -48,7 +52,7 @@ const createCustomer = async (data) => {
 };
 
 const createUser = async (data) => {
-  const { username, email, password, mobile, image, role } = data;
+  const { username, email, password, mobile, image, role, status } = data;
 
   const existingUser = await User.findOne({ email, isDeleted: false });
   if (existingUser) throw new Error("EMAIL EXISTS");
@@ -58,7 +62,9 @@ const createUser = async (data) => {
   let roleId;
   if (role) roleId = await resolveRoleId(role);
   else {
-    const fallbackRole = await Role.findOne({ name: { $regex: "^user$", $options: "i" } }).lean();
+    const fallbackRole = await Role.findOne({
+      name: { $regex: "^user$", $options: "i" },
+    }).lean();
     if (!fallbackRole) throw new Error("Fallback role not found");
     roleId = fallbackRole._id;
   }
@@ -70,17 +76,36 @@ const createUser = async (data) => {
     mobile,
     image,
     role: roleId,
+    status: typeof status === "boolean" ? status : true,
     isDeleted: false,
   });
-  
+
   return user;
 };
 
 const loginUser = async (data) => {
   const { email, password } = data;
 
-  const user = await User.findOne({ email, isDeleted: false }).populate("role", "name").lean();
-  if (!user) throw new Error("user not found!");
+
+  const inactiveUser = await User.findOne({ email, status: false ,isDeleted:false})
+    .populate("role", "name")
+    .lean();
+ 
+  if (inactiveUser) throw new Error("user is not active!");
+
+
+  const deletedUser = await User.findOne({
+    email,
+    isDeleted: true,
+   
+  })
+    .populate("role", "name")
+    .lean();
+
+  if (deletedUser) throw new Error("user is deleted, email already registered and deleted!");
+  
+  const user = await User.findOne({ email}).populate("role","name").lean()
+  if(!user) throw new Error("user not found!")
 
   const passwordMatch = await bcrypt.compare(password, user.password);
   if (!passwordMatch) throw new Error("Invalid password");
@@ -100,7 +125,7 @@ const loginUser = async (data) => {
 
 const getAllUsers = async () => {
   const users = await User.find({ isDeleted: false })
-    .select("username email mobile image role")
+    .select("username email mobile image role status")
     .populate("role", "name")
     .lean();
 
@@ -109,35 +134,129 @@ const getAllUsers = async () => {
   return users;
 };
 
-const getDynamicUsers = async (rows, skip, length, queryObj) => {
-  // Always enforce soft-delete filter
-  const baseQuery = { ...(queryObj || {}), isDeleted: false };
+const getDynamicUsers = async (rows, skip, length, searchWord, from, to) => {
+  const limit = Math.max(0, Number(rows) || 0);
+  const offset = Math.max(0, Number(skip) || 0);
+  const includeTotal = Boolean(length);
 
-  let count;
-  if (length) {
-    count = await User.countDocuments(baseQuery);
+  const q = typeof searchWord === "string" ? searchWord.trim() : "";
+  const createdAtFilter = {};
+  if (from) createdAtFilter.$gte = new Date(from);
+  if (to) createdAtFilter.$lte = new Date(to);
+
+  const dateStage =
+    createdAtFilter.$gte || createdAtFilter.$lte
+      ? [{ $match: { createdAt: createdAtFilter } }]
+      : [];
+  const base = [
+    { $match: { isDeleted: false } },
+    ...dateStage,
+    {
+      $lookup: {
+        from: "roles",
+        localField: "role",
+        foreignField: "_id",
+        as: "roleDoc",
+      },
+    },
+    { $unwind: { path: "$roleDoc", preserveNullAndEmptyArrays: true } },
+    ...(q
+      ? [
+          {
+            $match: {
+              $or: [
+                { username: { $regex: q, $options: "i" } },
+                { description: { $regex: q, $options: "i" } },
+                { "roleDoc.name": { $regex: q, $options: "i" } },
+                {
+                  $expr: {
+                    $regexMatch: {
+                      input: { $toString: "$mobile" },
+                      regex: q,
+                      options: "i",
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ]
+      : []),
+  ];
+
+  let pipeline;
+
+  if (includeTotal) {
+    pipeline = [
+      ...base,
+
+      {
+        $facet: {
+          total: [{ $count: "value" }],
+          data: [
+            { $sort: { createdAt: -1 } },
+            { $skip: offset },
+            { $limit: limit },
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                email: 1,
+                mobile: 1,
+                role: "$roleDoc.name",
+                status: 1,
+                createdAt:1
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          data: 1,
+          total: { $ifNull: [{ $first: "$total.value" }, 0] },
+        },
+      },
+    ];
+
+    const agg = await User.aggregate(pipeline);
+    const first = agg[0] || { data: [], total: 0 };
+    const users = first.data.map((u) => {
+      const { _id, ...rest } = u;
+      return { id: String(_id), ...rest };
+    });
+    return { users, count: first.total };
   }
 
-  const rawUsers = await User.find(baseQuery)
-    .select("-__v")
-    .sort({ _id: 1 })
-    .skip(skip)
-    .limit(rows)
-    .populate("role", "name")
-    .lean();
+  pipeline = [
+    ...base,
+    { $sort: { createdAt: -1 } },
+    { $skip: offset },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        username: 1,
+        email: 1,
+        mobile: 1,
+        role: "$roleDoc.name",
+        status: 1,
+        createdAt:1
+      },
+    },
+  ];
 
-  const users = rawUsers.map((u) => {
-    const { _id, role, ...rest } = u;
-    return { id: _id.toString(), ...rest, role: role?.name ?? null };
+  const docs = await User.aggregate(pipeline);
+  const users = docs.map((u) => {
+    const { _id, ...rest } = u;
+    return { id: String(_id), ...rest };
   });
-
-  return { users, count };
+  return { users, count: 0 };
 };
 
 const getUserInfo = async (userId) => {
-  // Use findOne to include soft-delete filter
   const user = await User.findOne({ _id: userId, isDeleted: false })
-    .select("username email mobile role image")
+    .select("username email mobile role image status")
     .populate("role", "name")
     .lean();
 
@@ -148,14 +267,17 @@ const getUserInfo = async (userId) => {
 };
 
 const editUser = async (id, data) => {
-  // Prevent updates to deleted accounts
   const exists = await User.findOne({ _id: id, isDeleted: false }).lean();
   if (!exists) return null;
 
   const payload = { ...data };
 
   if (payload.email) {
-    const existing = await User.findOne({ email: payload.email, _id: { $ne: id }, isDeleted: false });
+    const existing = await User.findOne({
+      email: payload.email,
+      _id: { $ne: id },
+      isDeleted: false,
+    });
     if (existing) throw new Error("EMAIL EXISTS");
   }
 
@@ -167,7 +289,11 @@ const editUser = async (id, data) => {
     payload.role = await resolveRoleId(payload.role);
   }
 
-  const updatedUser = await User.findByIdAndUpdate(id, { $set: payload }, { new: true })
+  const updatedUser = await User.findByIdAndUpdate(
+    id,
+    { $set: payload },
+    { new: true }
+  )
     .select("-__v")
     .populate("role", "name")
     .lean();
@@ -179,7 +305,6 @@ const editUser = async (id, data) => {
 };
 
 const deleteUser = async (id) => {
-  // ✅ Soft delete instead of hard delete
   const res = await User.findByIdAndUpdate(
     id,
     { $set: { isDeleted: true } },
@@ -189,7 +314,11 @@ const deleteUser = async (id) => {
 };
 
 const userAvtarUpload = async (id, imgUrl) => {
-  const user = await User.updateOne({ _id: id, isDeleted: false }, { $set: { image: imgUrl } }, { new: true });
+  const user = await User.updateOne(
+    { _id: id, isDeleted: false },
+    { $set: { image: imgUrl } },
+    { new: true }
+  );
   if (!user) throw new Error("No user found.");
 };
 

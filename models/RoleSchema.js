@@ -46,6 +46,10 @@ let RoleSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    isDeleted:{
+      type:Boolean,
+      default:false
+    },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },

@@ -14,17 +14,17 @@ import {
   getRoleByIdController, 
 } from "../controllers/roleController.js";
 
-router.post("/create-role", createRoleController);
+router.post("/create-role",userAuthenticate, authorize(["admin","superadmin"]), createRoleController);
 
 
-router.get("/modules-permissions", getModulesAndPermissionsController);
+router.get("/modules-permissions",userAuthenticate, authorize(["admin","superadmin"]), getModulesAndPermissionsController);
 
-router.get("/", getAllRolesController);
+router.get("/", userAuthenticate, authorize(["admin","superadmin"]),getAllRolesController);
 
-router.get("/:id", getRoleByIdController);
+router.get("/:id",userAuthenticate, authorize(["admin","superadmin"]), getRoleByIdController);
 
-router.put("/edit/:id", editRoleController);
+router.put("/edit/:id",userAuthenticate, authorize(["admin","superadmin"]), editRoleController);
 
-router.delete("/:id", deleteRoleController);
+router.delete("/:id",userAuthenticate, authorize(["admin","superadmin"]), deleteRoleController);
 
 export default router;

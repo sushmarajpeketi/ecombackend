@@ -27,6 +27,7 @@ import {
 router.post(
   "/create-product",
   userAuthenticate,
+  authorize(["admin","superadmin"]),
   validate(createProductSchema),
   createProductController
 );
@@ -37,7 +38,7 @@ router.get("/:id", getSingleProductController);
 router.post(
   "/upload-image",
   userAuthenticate,
-  authorize(["admin"]),
+  authorize(["admin","superadmin"]),
   upload.single("image"),
   uploadProductImageController
 );
@@ -45,7 +46,7 @@ router.post(
 router.put(
   "/:id",
   userAuthenticate,
-  authorize(["admin"]),
+  authorize(["admin","superadmin"]),
   validate(updateProductSchema),
   updateProductController
 );

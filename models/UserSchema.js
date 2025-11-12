@@ -22,7 +22,7 @@ let UserSchema = new Schema(
     },
 
     mobile: {
-      type: Number,
+      type: String,
       required: [true, "Mobile number is required"],
       validate: {
         validator: (v) => /^[0-9]{10}$/.test(v.toString()),
@@ -34,6 +34,10 @@ let UserSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Role",
       required: true,
+    },
+    status:{
+      type:Boolean,
+      default:true
     },
 
     image: {

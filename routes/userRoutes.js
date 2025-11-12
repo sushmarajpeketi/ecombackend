@@ -6,7 +6,7 @@ import validate from "../middlewares/validationMiddleware.js";
 import {
   registerSchema,
   loginSchema,
-  updateUserSchema
+  updateUserSchema,
 } from "../validators/schemas/userValidationSchema.js";
 
 import {
@@ -20,7 +20,7 @@ import {
   deleteUserController,
   uploadUserAvatarController,
   getSingleUserController,
-  createCustomerController
+  createCustomerController,
 } from "../controllers/userController.js";
 
 import userAuthenticate from "../middlewares/authenticationMiddleware.js";
@@ -30,25 +30,50 @@ router.post("/sign-up", validate(registerSchema), createCustomerController);
 router.post("/sign-in", validate(loginSchema), loginUserController);
 router.get("/logout", logoutUserController);
 
-router.get("/all-users", userAuthenticate, authorize(["admin"]), getAllUsersController);
-
-router.get("/", userAuthenticate, authorize(["customer", "admin"]), getDynamicUsersController);
-
 router.get(
-  "/user-info",
+  "/all-users",
   userAuthenticate,
-  (req, res, next) => { next(); },
-  authorize(["admin"]),
-  getUserInfoController
+  authorize(["admin", "superadmin"]),
+  getAllUsersController
 );
 
-router.put("/:id", validate(updateUserSchema), userAuthenticate, authorize(["admin"]), editUserController);
+router.get(
+  "/",
+  userAuthenticate,
+  authorize(["customer", "admin", "superadmin"]),
+  getDynamicUsersController
+);
 
-router.delete("/:id", userAuthenticate, authorize(["admin", "customer"]), deleteUserController);
+router.get("/user-info", userAuthenticate, getUserInfoController);
 
-router.post("/upload-avatar", userAuthenticate, authorize("admin", "customer"), upload.single("avatar"), uploadUserAvatarController);
+router.put(
+  "/:id",
+  validate(updateUserSchema),
+  userAuthenticate,
+  authorize(["admin", "superadmin"]),
+  editUserController
+);
 
-router.get("/:id", userAuthenticate, authorize(["admin", "customer"]), getSingleUserController);
+router.delete(
+  "/:id",
+  userAuthenticate,
+  authorize(["admin", "customer", "superadmin"]),
+  deleteUserController
+);
+
+router.post(
+  "/upload-avatar",
+  userAuthenticate,
+  upload.single("avatar"),
+  uploadUserAvatarController
+);
+
+router.get(
+  "/:id",
+  userAuthenticate,
+  authorize(["admin", "customer", "superadmin"]),
+  getSingleUserController
+);
 
 router.post("/employee/create", createUserController);
 

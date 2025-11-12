@@ -1,7 +1,7 @@
 // models/ProductSchema.js
 import mongoose from "mongoose";
 
-const productSchema = new mongoose.Schema(
+const moduleSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -16,24 +16,12 @@ const productSchema = new mongoose.Schema(
       minlength: 4,
       maxlength: 500,
     },
-    price: {
-      type: Number,
-      required: true,
-      min: 1,
+    permissions: {
+        
     },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      required: true,
-    },
-    image: {
-      type: String,
-      default: "",
-    },
-
-    isDeleted:{
-      type:Boolean,
-      default:false
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
     status: {
       type: Boolean,
@@ -43,4 +31,4 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Product", productSchema);
+export default mongoose.model("Module", moduleSchema);

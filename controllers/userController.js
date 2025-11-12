@@ -8,13 +8,15 @@ import {
   deleteUser,
   userAvtarUpload,
   getSingleUser,
-  createUser
+  createUser,
 } from "../services/userServices.js";
 
 const createCustomerController = async (req, res) => {
   try {
     const user = await createCustomer(req.validatedData);
-    return res.status(201).json({ success: true, message: "SignUp successfully", user });
+    return res
+      .status(201)
+      .json({ success: true, message: "SignUp successfully", user });
   } catch (error) {
     if (error.message === "EMAIL EXISTS") {
       return res.status(409).json({ error: "Email already exists" });
@@ -41,9 +43,14 @@ const createUserController = async (req, res) => {
     });
   } catch (error) {
     if (error.message === "EMAIL EXISTS") {
-      return res.status(409).json({ success: false, message: "Email already exists" });
+      return res
+        .status(409)
+        .json({ success: false, message: "Email already exists" });
     }
-    if (error.message === "Role not found" || error.message === "Fallback role not found") {
+    if (
+      error.message === "Role not found" ||
+      error.message === "Fallback role not found"
+    ) {
       return res.status(400).json({ success: false, message: error.message });
     }
     return res.status(500).json({ success: false, message: error.message });
@@ -63,9 +70,12 @@ const loginUserController = async (req, res) => {
         error: err.message,
       });
     }
-    return res.status(200).json({ success: true, message: "Login successful", user });
+    return res
+      .status(200)
+      .json({ success: true, message: "Login successful", user });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.log("----------",err)
+    res.status(400).json({ success: false, error: err.message });
   }
 };
 
@@ -93,17 +103,20 @@ const getAllUsersController = async (_req, res) => {
 
 const getDynamicUsersController = async (req, res) => {
   try {
-    let { page, rows, username, email, length } = req.query;
-
-    let queryObj = { isDeleted: false }; 
-    if (username) queryObj.username = { $regex: username, $options: "i" };
-    if (email) queryObj.email = { $regex: email, $options: "i" };
+    let { page, rows, searchWord, length, from, to } = req.query;
 
     page = parseInt(page) || 0;
     rows = parseInt(rows) || 10;
     const skip = page * rows;
 
-    const { users, count } = await getDynamicUsers(rows, skip, length, queryObj);
+    const { users, count } = await getDynamicUsers(
+      rows,
+      skip,
+      length,
+      searchWord,
+      from,
+      to
+    );
 
     return res.status(200).json({
       success: true,
@@ -131,9 +144,15 @@ const editUserController = async (req, res) => {
   try {
     const updatedUser = await editUser(id, req.body);
     if (!updatedUser) {
-      return res.status(404).json({ success: false, error: "User not found or not updated" });
+      return res
+        .status(404)
+        .json({ success: false, error: "User not found or not updated" });
     }
-    return res.status(200).json({ success: true, message: "User updated successfully", user: updatedUser });
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser,
+    });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -142,11 +161,13 @@ const editUserController = async (req, res) => {
 const deleteUserController = async (req, res) => {
   const { id } = req.params;
   try {
-    const deletedUser = await deleteUser(id); 
+    const deletedUser = await deleteUser(id);
     if (!deletedUser) {
       return res.status(404).json({ success: false, error: "User not found" });
     }
-    return res.status(200).json({ success: true, message: "User deleted successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "User deleted successfully" });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
@@ -172,10 +193,16 @@ const getSingleUserController = async (req, res) => {
   try {
     const { id } = req.params;
     if (req.auth.role === "customer" && req.auth.id !== id) {
-      return res.status(403).json({ success: false, message: "You are not allowed to access this user" });
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access this user",
+      });
     }
     const user = await getSingleUser(id); // filtered for isDeleted:false
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     res.json({ success: true, message: "User fetched successfully", user });
   } catch (err) {

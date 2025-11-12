@@ -23,6 +23,7 @@ export const updateUserSchema = z
     mobile: mobile.optional(),
     image,
     role: role.optional(),
+    status: z.boolean().optional(), // ✅ allow toggling status
   })
   .refine(
     (data) => Object.values(data).some((v) => v !== undefined),

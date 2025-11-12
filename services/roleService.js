@@ -1,3 +1,4 @@
+// services/roleService.js
 import Role from "../models/RoleSchema.js";
 import { MODULES, OPERATIONS } from "../models/RoleSchema.js";
 import dayjs from "dayjs";
@@ -14,12 +15,13 @@ const createRole = async (data) => {
 
 const SORTABLE = new Set(["name", "description", "createdAt"]);
 
- const getRoles = async (query) => {
+const getRoles = async (query) => {
   const {
     page = 0,
     rows = 10,
-    name,
-    createdAt,
+    searchWord,
+    from,
+    to,
     module,
     operation,
     isActive,
@@ -30,17 +32,24 @@ const SORTABLE = new Set(["name", "description", "createdAt"]);
 
   const filter = {};
 
-  if (name) filter.name = { $regex: name, $options: "i" };
+ 
+  const q = typeof searchWord === "string" ? searchWord.trim() : "";
+  if (q) {
+    filter.$or = [
+      { name: { $regex: q, $options: "i" } },
+      { description: { $regex: q, $options: "i" } },
+    ];
+  }
 
   if (isActive === "true" || isActive === "false") {
     filter.isActive = isActive === "true";
   }
 
-  if (createdAt) {
-    const start = dayjs(createdAt).startOf("day").toDate();
-    const end = dayjs(createdAt).endOf("day").toDate();
-    filter.createdAt = { $gte: start, $lte: end };
-  }
+
+  const created = {};
+  if (from) created.$gte = dayjs(from).startOf("day").toDate();
+  if (to) created.$lte = dayjs(to).endOf("day").toDate();
+  if (created.$gte || created.$lte) filter.createdAt = created;
 
   if (module && operation) {
     filter[`permissions.${module}`] = { $in: [operation] };
@@ -60,7 +69,7 @@ const SORTABLE = new Set(["name", "description", "createdAt"]);
   const toPlainPermissions = (p) => {
     if (!p) return {};
     if (p instanceof Map) return Object.fromEntries(p);
-    if (typeof p === "object") return p; 
+    if (typeof p === "object") return p;
     return {};
   };
 
@@ -73,21 +82,18 @@ const SORTABLE = new Set(["name", "description", "createdAt"]);
     createdAt: r.createdAt,
   }));
 
-  const total =
-    fetchTotal === "true" ? await Role.countDocuments(filter) : undefined;
+  const total = fetchTotal === "true" ? await Role.countDocuments(filter) : undefined;
 
   return { roles, total };
 };
 
-
 const deleteRole = async (id) => {
-  const deleted = await Role.findByIdAndDelete(id);
 
+  const deleted = await Role.findByIdAndDelete(id).lean();
   return deleted;
 };
 
 const editRole = async (id, data) => {
-  console.log(data);
   const updates = {};
 
   if (data.name !== undefined) updates.name = data.name;
@@ -121,8 +127,7 @@ const createFallbackRole = async () => {
   }
 };
 
-
- const getModulesAndPermissions = async () => {
+const getModulesAndPermissions = async () => {
   return {
     modules: MODULES,
     permissions: OPERATIONS,
@@ -157,6 +162,5 @@ export {
   editRole,
   createFallbackRole,
   getModulesAndPermissions,
-  getRoleById
+  getRoleById,
 };
-
