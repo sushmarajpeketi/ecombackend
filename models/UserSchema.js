@@ -35,9 +35,9 @@ let UserSchema = new Schema(
       ref: "Role",
       required: true,
     },
-    status:{
-      type:Boolean,
-      default:true
+    status: {
+      type: Boolean,
+      default: true,
     },
 
     image: {
@@ -48,7 +48,6 @@ let UserSchema = new Schema(
       },
     },
 
- 
     isDeleted: {
       type: Boolean,
       default: false,

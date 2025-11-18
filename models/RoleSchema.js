@@ -1,10 +1,8 @@
 import mongoose, { Schema } from "mongoose";
-export const MODULES = ["users", "products", "dashboard", "categories"];
-export const OPERATIONS = ["read", "write", "delete"];
+import { getModulesNames } from "../services/moduleServices.js";
 
 import User from "./UserSchema.js";
-
-
+import constants from "../constants.js";
 let RoleSchema = new Schema(
   {
     name: {
@@ -28,27 +26,37 @@ let RoleSchema = new Schema(
       type: Map,
       of: {
         type: [String],
-        enum: OPERATIONS,
+        enum: constants.OPERATIONS,
       },
       validate: {
-        validator: (value) => {
-          return (
-            [...value.keys()].every((key) => MODULES.includes(key)) &&
-            [...value.values()].every((arr) =>
-              arr.every((op) => OPERATIONS.includes(op))
-            )
+        validator: async function (value) {
+          const MODULES = await getModulesNames();
+          const keysValid = [...value.keys()].every((key) => {
+            return MODULES.includes(key);
+          });
+
+          const opsValid = [...value.values()].every((arr) =>
+            arr.every((op) => constants.OPERATIONS.includes(op))
           );
+       
+          return keysValid && opsValid;
         },
         message: "Invalid modules or operations in permissions",
       },
     },
+
+    // modules:[{
+    //   type: Schema.Types.ObjectId,
+    //   ref: "Module",
+    //   required: true,
+    // }],
     isActive: {
       type: Boolean,
       default: true,
     },
-    isDeleted:{
-      type:Boolean,
-      default:false
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -70,14 +78,14 @@ RoleSchema.pre(
     next();
   }
 );
-// RoleSchema.js
+
 RoleSchema.set("toJSON", {
   transform: (_, ret) => {
     if (ret.permissions instanceof Map) {
       ret.permissions = Object.fromEntries(ret.permissions);
     }
     return ret;
-  }
+  },
 });
 
 let Role = mongoose.model("Role", RoleSchema);

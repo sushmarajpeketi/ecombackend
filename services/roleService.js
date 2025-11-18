@@ -1,6 +1,5 @@
 // services/roleService.js
 import Role from "../models/RoleSchema.js";
-import { MODULES, OPERATIONS } from "../models/RoleSchema.js";
 import dayjs from "dayjs";
 
 const createRole = async (data) => {
@@ -9,11 +8,57 @@ const createRole = async (data) => {
     name,
     description,
     permissions,
+   
   });
+  return createdRole;
+};
+    
+const createRoleN = async (data) => {
+  const { name, description, modules } = data;
+ 
+  const createdRole = await Role.create({
+    name,
+    description,
+    modules ,
+  })
+   await createdRole.populate("modules")
+ 
+ 
+  createdRole.modules.forEach((el)=>{
+      return {[el.name]:[el.permissions],}
+  })
   return createdRole;
 };
 
 const SORTABLE = new Set(["name", "description", "createdAt"]);
+
+const getAllRoles = async () => {
+  const roles = await Role.aggregate([
+    {
+      $match: {},
+    },
+    {
+      $lookup: {
+        from: "modules",
+        localField: "modules",
+        foreignField: "_id",
+        as: "result",
+      },
+    },
+    {
+      $project: {
+        "result.name": 1,
+        "result.permissions": 1,
+        name: 1,
+        description: 1,
+        isActive: 1,
+        createdAt: 1,
+        modules: 1,
+      },
+    },
+  ]);
+  console.log(roles)
+};
 
 const getRoles = async (query) => {
   const {
@@ -32,7 +77,6 @@ const getRoles = async (query) => {
 
   const filter = {};
 
- 
   const q = typeof searchWord === "string" ? searchWord.trim() : "";
   if (q) {
     filter.$or = [
@@ -44,7 +88,6 @@ const getRoles = async (query) => {
   if (isActive === "true" || isActive === "false") {
     filter.isActive = isActive === "true";
   }
-
 
   const created = {};
   if (from) created.$gte = dayjs(from).startOf("day").toDate();
@@ -82,13 +125,13 @@ const getRoles = async (query) => {
     createdAt: r.createdAt,
   }));
 
-  const total = fetchTotal === "true" ? await Role.countDocuments(filter) : undefined;
+  const total =
+    fetchTotal === "true" ? await Role.countDocuments(filter) : undefined;
 
   return { roles, total };
 };
 
 const deleteRole = async (id) => {
-
   const deleted = await Role.findByIdAndDelete(id).lean();
   return deleted;
 };
@@ -158,9 +201,11 @@ const getRoleById = async (id) => {
 export {
   createRole,
   getRoles,
+  getAllRoles,
   deleteRole,
   editRole,
   createFallbackRole,
   getModulesAndPermissions,
   getRoleById,
+  createRoleN
 };

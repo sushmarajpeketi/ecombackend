@@ -33,31 +33,33 @@ router.get("/logout", logoutUserController);
 router.get(
   "/all-users",
   userAuthenticate,
-  authorize(["admin", "superadmin"]),
+  // authorize(["admin", "superadmin"]),
   getAllUsersController
 );
 
 router.get(
   "/",
   userAuthenticate,
-  authorize(["customer", "admin", "superadmin"]),
+  // authorize(["customer", "admin", "superadmin"]),
   getDynamicUsersController
 );
 
-router.get("/user-info", userAuthenticate, getUserInfoController);
+router.get("/user-info",
+   userAuthenticate,
+    getUserInfoController);
 
 router.put(
   "/:id",
   validate(updateUserSchema),
   userAuthenticate,
-  authorize(["admin", "superadmin"]),
+  // authorize(["admin", "superadmin"]),
   editUserController
 );
 
 router.delete(
   "/:id",
   userAuthenticate,
-  authorize(["admin", "customer", "superadmin"]),
+  // authorize(["admin", "customer", "superadmin"]),
   deleteUserController
 );
 
@@ -71,7 +73,7 @@ router.post(
 router.get(
   "/:id",
   userAuthenticate,
-  authorize(["admin", "customer", "superadmin"]),
+  // authorize(["admin", "customer", "superadmin"]),
   getSingleUserController
 );
 

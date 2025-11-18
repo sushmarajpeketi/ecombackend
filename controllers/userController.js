@@ -130,6 +130,7 @@ const getDynamicUsersController = async (req, res) => {
 
 const getUserInfoController = async (req, res) => {
   try {
+ 
     const userId = req.auth.id;
     const user = await getUserInfo(userId);
     if (!user) return res.status(401).json({ error: "User not found" });

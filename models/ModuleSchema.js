@@ -1,4 +1,3 @@
-// models/ProductSchema.js
 import mongoose from "mongoose";
 
 const moduleSchema = new mongoose.Schema(
@@ -16,9 +15,7 @@ const moduleSchema = new mongoose.Schema(
       minlength: 4,
       maxlength: 500,
     },
-    permissions: {
-        
-    },
+
     isDeleted: {
       type: Boolean,
       default: false,
@@ -30,5 +27,5 @@ const moduleSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-export default mongoose.model("Module", moduleSchema);
+let Module = mongoose.model("Module", moduleSchema);
+export default Module;

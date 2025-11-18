@@ -14,10 +14,19 @@ import {
   getSingleCategoryController,
 } from "../controllers/categoryController.js";
 
-router.post("/create-category", userAuthentication, authorize(["admin","superadmin"]), validate(createCategorySchema), createCategoryController);
+router.post("/create-category",
+   userAuthentication,
+    // authorize(["admin","superadmin"]), 
+    validate(createCategorySchema), createCategoryController);
 router.get("/", userAuthentication, getAllCategoriesController);
-router.put("/:id", userAuthentication, authorize(["admin","superadmin"]), validate(updateCategorySchema), updateCategoryController);
-router.delete("/:id", userAuthentication, authorize(["admin","superadmin"]), deleteCategoryController);
-router.get("/:id", userAuthentication, authorize(["admin","superadmin"]), getSingleCategoryController);
+router.put("/:id", userAuthentication, 
+  // authorize(["admin","superadmin"]),
+   validate(updateCategorySchema), updateCategoryController);
+router.delete("/:id", userAuthentication,
+  //  authorize(["admin","superadmin"]),
+    deleteCategoryController);
+router.get("/:id", userAuthentication,
+  //  authorize(["admin","superadmin"]), 
+   getSingleCategoryController);
 
 export default router;

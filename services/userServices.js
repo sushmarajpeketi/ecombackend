@@ -86,26 +86,32 @@ const createUser = async (data) => {
 const loginUser = async (data) => {
   const { email, password } = data;
 
+  const inactiveUser = await User.findOne({
+    email,
+    status: false,
+    isDeleted: false,
+  })
+    
 
-  const inactiveUser = await User.findOne({ email, status: false ,isDeleted:false})
-    .populate("role", "name")
-    .lean();
- 
   if (inactiveUser) throw new Error("user is not active!");
-
 
   const deletedUser = await User.findOne({
     email,
     isDeleted: true,
-   
   })
-    .populate("role", "name")
-    .lean();
+    
 
-  if (deletedUser) throw new Error("user is deleted, email already registered and deleted!");
-  
-  const user = await User.findOne({ email}).populate("role","name").lean()
-  if(!user) throw new Error("user not found!")
+  if (deletedUser)
+    throw new Error("user is deleted, email already registered and deleted!");
+
+  const user = await User.findOne({ email })
+    .select("username password email mobile role image status permissions")
+    .populate({
+      path: "role",
+      select: "name permissions",
+    })
+    .lean();
+  if (!user) throw new Error("user not found!");
 
   const passwordMatch = await bcrypt.compare(password, user.password);
   if (!passwordMatch) throw new Error("Invalid password");
@@ -116,11 +122,18 @@ const loginUser = async (data) => {
     email,
     role: user.role?.name,
   };
-
-  const token = jwt.sign(payload, process.env.SECRETKEY, { expiresIn: "1h" });
+  // console.log("***********",payload)
+  const token = jwt.sign(payload, process.env.SECRETKEY, { expiresIn: "2h" });
   if (!token) throw new Error("JWT Error");
-
-  return { token, user };
+  // const { _id, role, ...rest } = user;
+  let modifiedUser= {
+    ...user,
+    id: user._id,
+    
+    role: user.role?.name ?? null,
+    permissions: user.role?.permissions ?? null,
+  };
+  return { token, user:modifiedUser };
 };
 
 const getAllUsers = async () => {
@@ -205,7 +218,7 @@ const getDynamicUsers = async (rows, skip, length, searchWord, from, to) => {
                 mobile: 1,
                 role: "$roleDoc.name",
                 status: 1,
-                createdAt:1
+                createdAt: 1,
               },
             },
           ],
@@ -241,7 +254,7 @@ const getDynamicUsers = async (rows, skip, length, searchWord, from, to) => {
         mobile: 1,
         role: "$roleDoc.name",
         status: 1,
-        createdAt:1
+        createdAt: 1,
       },
     },
   ];
@@ -256,14 +269,22 @@ const getDynamicUsers = async (rows, skip, length, searchWord, from, to) => {
 
 const getUserInfo = async (userId) => {
   const user = await User.findOne({ _id: userId, isDeleted: false })
-    .select("username email mobile role image status")
-    .populate("role", "name")
+    .select("username email mobile role image status permissions")
+    .populate({
+      path: "role",
+      select: "name permissions",
+    })
     .lean();
 
   if (!user) return null;
 
   const { _id, role, ...rest } = user;
-  return { id: _id, ...rest, role: role?.name ?? null };
+  return {
+    id: _id,
+    ...rest,
+    role: role?.name ?? null,
+    permissions: role?.permissions ?? null,
+  };
 };
 
 const editUser = async (id, data) => {

@@ -12,6 +12,7 @@ import categoryRouter from "./routes/categoryRoutes.js";
 
 import roleRouter from "./routes/rolesRoutes.js";
 import { createFallbackRole } from "./services/roleService.js";
+import moduleRouter from "./routes/moduleRoutes.js";
 
 let app = express();
 
@@ -19,7 +20,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "http://localhost:3000",
     credentials: true,
   })
 );
@@ -34,6 +35,7 @@ app.use("/users", userRouter);
 app.use("/products", productRouter);
 app.use("/category", categoryRouter);
 app.use("/roles", roleRouter);
+app.use("/modules",moduleRouter)
 
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
@@ -42,7 +44,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-app.listen("3000", () => {
+app.listen("3001", () => {
   mongoose
     .connect(`${process.env.MONGO_URL}`)
     .then(() => {
